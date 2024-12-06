@@ -14,6 +14,7 @@ function setup() {
   capture.hide();
 
   noStroke();
+  fill(255);
   textFont('times', 24);
   textAlign(CENTER, CENTER);
   lines = ["black futurities"];
@@ -43,7 +44,7 @@ function draw() {
 }
 
 function drawText() {
-  background(250);
+  background(0);
   // this creates a block of text, lookig for a ' ' in the text as a point to join 
   // items togetehr into a unified string
   text(lines.join(' '), width/10, height/4, 400, 400);
