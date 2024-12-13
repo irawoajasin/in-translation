@@ -1,8 +1,26 @@
 html, body {
   margin: 0;
   padding: 0;
+  background-color: black;
+  color: white;
+}
+
+nav {
+  bottom: 5%;
+  position: absolute;
+  left: 5%;
+}
+
+a {
+  color: white;
+  font-style: italic;
 }
 
 canvas {
   display: block;
+  margin-bottom:0;
+}
+
+#questions {
+  position:absolute;
 }
