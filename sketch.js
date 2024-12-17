@@ -13,78 +13,53 @@ myRec.continuous = true; // do continuous recognition
 myRec.interimResults = true; // allow partial recognition (faster, less accurate)
 
 function preload() {
-  /* load the text
-    one = loadStrings('corpora1.txt');
-    two = loadStrings('corpora2.txt');
-    three = loadStrings('corpora3.txt');
-    four = loadStrings('corpora4.txt');
-    five = loadStrings('corpora5.txt');
-    six = loadStrings('corpora6.txt');
-    seven = loadStrings('corpora7.txt');
-    eight = loadStrings('corpora8.txt');
-    */
 
+  // load the text
     happy = loadStrings('happy.txt');
-    lonley = loadStrings('lonely.txt');
+    anxiety = loadStrings('anxiety.txt');
     angry = loadStrings('anger.txt');
-    loving = loadStrings('love.txt');
     sad = loadStrings('sad.txt');
-    /*six = loadStrings('corpora6.txt');
-    seven = loadStrings('corpora7.txt');
-    eight = loadStrings('corpora8.txt');*/
 
+    // create new markov chain that generates 2 sentences
     let markov = new RiMarkov(2);
   }
 
 function setup() {
+  //set up camera
   createCanvas(windowWidth, windowHeight-(windowHeight*0.05));
   capture = createCapture(VIDEO);
   capture.size(width, height);
   capture.hide();
 
+  // text setup
   noStroke();
   fill(255);
   textFont('times', 36);
   textAlign(CENTER, CENTER);
   
+  //helps ensure that output is novel text
   disableInputChecks: true;
 
-  /*
-  markov.addText(one.join(' '));
-  markov.addText(two.join(' '));
-  markov.addText(three.join(' '));
-  markov.addText(four.join(' '));
-  markov.addText(five.join(' '));
-  markov.addText(six.join(' '));
-  markov.addText(seven.join(' '));
-  markov.addText(eight.join(' '));
-  */
-
   lines = ["freeforms"];
-  emotion = "1. hold the spacebar \n 2. speak an emotion \n 3. generate a poem";
+  emotion = "1. hold the spacebar \n 2. speak an emotion \n 3. generate a poem \n 4. click screen to save";
   drawText();
-//  myRec.start(); // start engine
 }
 
 function draw() {
-  /*
-  if(frameCount % 60 == 0){
-    background(255);
-    text(RiTa.randomWord(), width/4, height/2);
-  }
-  */
 
+  //crop the camera feed to fit in half the screen
   let cropSize = min(capture.width, capture.height);  // Get the smallest dimension
   let cropX = (capture.width - cropSize) / 2;
   let cropY = (capture.height - cropSize) / 2;
-
   let croppedVideo = capture.get(cropX, cropY, cropSize, capture.height*0.8);
 
+  // threshold filter on cam feed
   push();
   image(croppedVideo, width/2, 0, width/2, height);
   filter(THRESHOLD);
   pop();
 
+  // label the emotion that the user states
   stroke(0);
   fill(255);
   strokeWeight(10);
@@ -99,28 +74,12 @@ function drawText() {
   text(lines, width/10, height/4, 400, 400);
 }
 
-/*
-function keyPressed(){
-  if (keyCode == 32) {
-    lines = markov.generate(2);
-    drawText();
-  }
-}
-*/
-
 function parseResult() {
   // recognition system will often append words into phrases.
   // so hack here is to only use the last word:
   mostrecentword = myRec.resultString.split(' ').pop();
   console.log(mostrecentword);
 }
-
-window.addEventListener("keydown", (event) => {
-  if (event.key === " ") {
-    event.preventDefault(); // Prevents adding a newline in the div
-    //inputDiv.innerHTML = "";
-  }
-});
 
 // This function is called when any key is pressed
 function keyPressed() {
@@ -129,7 +88,7 @@ function keyPressed() {
     console.log("Spacebar is pressed");
     event.preventDefault(); // Prevents adding a newline in the div
     myRec.start(); // start engine
-    emotion = '';
+    emotion = 'listening...';
   }
 }
 
@@ -140,61 +99,48 @@ function keyReleased() {
     console.log("Spacebar is released");
     myRec.stop(); // start engine
 
+    //when space released, create a brand new 2 sentence markov chain to train
     markov = new RiMarkov(2);
     console.log(markov);
 
-    if (mostrecentword == "happy" || mostrecentword == 'happiness' || mostrecentword == 'joy') {
+    // listens for the most recent word you said, looks for the top 5 synonyms of the target emotion we have represented
+    if (mostrecentword == "happy" || mostrecentword == 'happiness' || mostrecentword == 'joy' || mostrecentword == 'content' || mostrecentword == 'cheerful' || mostrecentword == 'joy' || mostrecentword == 'glad') {
       emotion = 'happy';
-    } else if (mostrecentword == 'sad' || mostrecentword == 'upset' || mostrecentword == 'low' || mostrecentword == 'bad') {
+    } else if (mostrecentword == 'sad' || mostrecentword == 'upset' || mostrecentword == 'low' || mostrecentword == 'bad' || mostrecentword == 'lonely' || mostrecentword == 'depressed' || mostrecentword == 'unhappy' || mostrecentword == 'blue' || mostrecentword == 'miserable') {
       emotion = 'sad';
-    } else if (mostrecentword == 'angry' || mostrecentword == 'mad' || mostrecentword == 'furious') {
+    } else if (mostrecentword == 'angry' || mostrecentword == 'mad' || mostrecentword == 'furious' || mostrecentword == 'hurt' || mostrecentword == 'annoyed' || mostrecentword == 'irate') {
       emotion = 'angry';
+    } else if (mostrecentword == 'anxious' || mostrecentword == 'worried' || mostrecentword == 'concerned' || mostrecentword == 'fear' || mostrecentword == 'fearful' || mostrecentword == 'nervous' || mostrecentword == 'panic') {
+      emotion = 'anxious';
+    } else {
+      emotion = '';
     }
 
-
+    // if the emotion was identified, train the just created markov chain with that emotions corpora
     if (emotion == 'sad') {
       markov.loadText(sad.join(' '));
     } else if (emotion == 'angry') {
       markov.loadText(angry.join(' '));
+    } else if (emotion =="anxious") {
+      markov.loadText(anxiety.join(' '));
     } else {
+      //when no specific emotion is identified, default to happy
       markov.loadText(happy.join(' '));
     }
     
     console.log(emotion);
     
+    // generate 2 new sentences and send to be printed
     lines = markov.generateSentences(2);
-    /*
-    while(mostrecentword!= "") {
-      
-      for (let i = 0; i < lines.length; i++) {
-        const words = lines[i].split(" ");
-        for (let j = 0; i < words.length; i++) {
-          console.log(words[j] + ": " + mostrecentword);
-          if (RiTa.isNoun(words[j]) && RiTa.isNoun(mostrecentword)) {
-            words[j] = mostrecentword;
-          }
-
-          if (RiTa.isAdverb(words[j]) && RiTa.isAdverb(mostrecentword)) {
-            words[j] = mostrecentword;
-          }
-
-          if (RiTa.isAdjective(words[j]) && RiTa.isAdjective(mostrecentword)) {
-            words[j] = mostrecentword;
-          }
-
-          if (RiTa.isVerb(words[j]) && RiTa.isVerb(mostrecentword)) {
-            words[j] = mostrecentword;
-          }
-        }
-      }
-    }
-
-    seedText = mostrecentword;
-    */
-    //lines = markov.generate(2);
     drawText();
 
     console.log(lines);
     console.log(mostrecentword);
+  }
+}
+
+function keyPressed() {
+  if (key === 's') {  
+    save(emotion + 'Poem.png');
   }
 }
